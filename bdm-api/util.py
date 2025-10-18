@@ -38,10 +38,24 @@ def generate_slug(string : str, model) -> str :
             if (result == None):
                 return newSlug
 
+def get_genre_tree(genre):
+    return [{
+        "id": genre.id,
+        "name": genre.name,
+        "slug": genre.slug,
+        "subgenres": get_genre_tree(genre)
+    } for genre in genre.subgenres]
+
 def create_genre_dict(genre):
     return {
         "id": genre.id,
         "name": genre.name,
         "top":  genre.top,
-        "slug": genre.slug
+        "slug": genre.slug,
+        "parents": [{
+            "id": genre.id,
+            "name": genre.name,
+            "slug": genre.slug
+        } for genre in genre.parents],
+        "subgenres": get_genre_tree(genre)
     }
