@@ -1,9 +1,10 @@
 from flask import Blueprint, request
 
-from models import db, Artist
-from util import create_slug
+from models import db, Artist, Genre
+from util import create_slug, generate_slug, create_genre_dict
 
 artists = Blueprint("artists", __name__)
+genres = Blueprint("genres", __name__)
 
 @artists.route("/artists")
 def artist_list():
@@ -34,34 +35,11 @@ def artist_detail(id):
 def add_artist():
     data = request.json
 
-    print(data)
-
     artist = Artist(
         name = data["name"]
     )
 
-    slug = create_slug(str(artist.name))
-
-    # Verificar si existe artista con el slug creado.
-    # Si existe, incrementar el contador por uno.
-    # Pegar el valor del contador al slug original para crear un nuevo slug.
-    # Verificar si existe un artista con ese nuevo slug y si lo hay, repetir
-    # el proceso hasta que la consulta no devuelva una fila.
-    query = db.select(Artist).filter_by(slug=slug)
-    existingArtist = db.session.execute(query).scalar()
-
-    count = 0
-
-    if(existingArtist == None):
-        artist.slug = slug
-    else:
-        while (existingArtist != None):
-            count += 1
-            newSlug = slug + "-" + str(count)
-            query = db.select(Artist).filter_by(slug=newSlug)
-            existingArtist = db.session.execute(query).scalar()
-            if (existingArtist == None):
-                artist.slug = newSlug
+    artist.slug = generate_slug(str(data["name"]), Artist)
 
     db.session.add(artist)
     db.session.commit()
@@ -69,4 +47,57 @@ def add_artist():
     return {
         "name": artist.name,
         "slug": artist.slug
+    }
+
+@genres.get("/genres")
+def genre_list():
+    query = db.select(Genre)
+
+    # Filtros
+    if request.values.get("name") != None:
+        query = query.filter_by(name=request.values.get("name"))
+    
+    if request.values.get("top") != None:
+        if request.values.get("top") == 1:
+            query = query.filter_by(top=True)
+
+    genres = db.session.execute(query).scalars()
+
+    return [{
+        "id": genre.id,
+        "name": genre.name
+    } for genre in genres]
+
+@genres.get("/genre/<int:id>")
+def genre_detail_id(id):
+    query = db.select(Genre).filter_by(id=id)
+    genre = db.session.execute(query).scalar()
+
+    return create_genre_dict(genre)
+
+@genres.get("/genre/<string:slug>")
+def genre_detail_slug(slug):
+    query = db.select(Genre).filter_by(slug=slug)
+    genre = db.session.execute(query).scalar()
+
+    return create_genre_dict(genre)
+
+@genres.post("/genre")
+def add_genre():
+    data = request.json
+
+    genre = Genre(
+        name = data["name"],
+        top  = data["top"]
+    )
+
+    genre.slug = generate_slug(str(data["name"]), Genre)
+
+    db.session.add(genre)
+    db.session.commit()
+
+    return {
+        "name": genre.name,
+        "top":  genre.top,
+        "slug": genre.slug
     }
