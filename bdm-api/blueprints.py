@@ -86,9 +86,18 @@ def genre_detail_slug(slug):
 def add_genre():
     data = request.json
 
+    parentNameList = data["parents"]
+    parents = []
+
+    for parentName in parentNameList:
+        query = db.select(Genre).filter_by(name=parentName)
+        parentObj = db.session.execute(query).scalar()
+        parents.append(parentObj)
+
     genre = Genre(
-        name = data["name"],
-        top  = data["top"]
+        name    = data["name"],
+        top     = data["top"],
+        parents = parents
     )
 
     genre.slug = generate_slug(str(data["name"]), Genre)
@@ -97,7 +106,8 @@ def add_genre():
     db.session.commit()
 
     return {
-        "name": genre.name,
-        "top":  genre.top,
-        "slug": genre.slug
+        "name":    genre.name,
+        "top":     genre.top,
+        "slug":    genre.slug,
+        "parents": [parent.name for parent in genre.parents],
     }
