@@ -22,6 +22,12 @@ class Artist(db.Model):
     name: Mapped[str] = mapped_column()
     slug: Mapped[str] = mapped_column(unique=True)
 
+subgenre_m2m = db.Table(
+    "subgenres",
+    sa.Column("parent_id", sa.ForeignKey("genres.id"), primary_key=True),
+    sa.Column("child_id",  sa.ForeignKey("genres.id"), primary_key=True),
+)
+
 class Genre(db.Model):
     __tablename__ = "genres"
     id:   Mapped[int]  = mapped_column(primary_key=True)
@@ -29,11 +35,21 @@ class Genre(db.Model):
     top:  Mapped[bool] = mapped_column(default=False)
     slug: Mapped[str]  = mapped_column(unique=True)
 
-subgenre_m2m = db.Table(
-    "subgenres",
-    sa.Column("parent_id", sa.ForeignKey(Genre.id), primary_key=True),
-    sa.Column("child_id",  sa.ForeignKey(Genre.id), primary_key=True),
-)
+    subgenres: Mapped[List["Genre"]] = relationship(
+        "Genre",
+        secondary=subgenre_m2m,
+        primaryjoin=id == subgenre_m2m.c.parent_id,
+        secondaryjoin=id == subgenre_m2m.c.child_id,
+        back_populates="parents"
+    )
+
+    parents: Mapped[List["Genre"]] = relationship(
+        "Genre",
+        secondary=subgenre_m2m,
+        primaryjoin=id == subgenre_m2m.c.child_id,
+        secondaryjoin=id == subgenre_m2m.c.parent_id,
+        back_populates="subgenres"
+    )
 
 '''
 class ReleaseType(db.Model):
