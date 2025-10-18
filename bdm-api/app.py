@@ -9,6 +9,7 @@ from models import db
 with app.app_context():
     db.create_all()
 
-from blueprints import artists
+from blueprints import artists, genres
 
 app.register_blueprint(artists)
+app.register_blueprint(genres)
