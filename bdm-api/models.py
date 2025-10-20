@@ -22,6 +22,13 @@ class Artist(db.Model):
     name: Mapped[str] = mapped_column()
     slug: Mapped[str] = mapped_column(unique=True)
 
+    def create_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "slug": self.slug,
+        }
+
 subgenre_m2m = db.Table(
     "subgenres",
     sa.Column("parent_id", sa.ForeignKey("genres.id"), primary_key=True),
@@ -50,6 +57,42 @@ class Genre(db.Model):
         secondaryjoin=id == subgenre_m2m.c.parent_id,
         back_populates="subgenres"
     )
+
+    def get_tree(self, genre):
+        return [{
+            "id": genre.id,
+            "name": genre.name,
+            "slug": genre.slug,
+            "subgenres": self.get_tree(genre)
+        } for genre in genre.subgenres]
+
+    def create_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "top":  self.top,
+            "slug": self.slug,
+            "parents": [{
+                "id": genre.id,
+                "name": genre.name,
+                "slug": genre.slug
+            } for genre in self.parents],
+            "subgenres": self.get_tree(self)
+        }
+
+    @staticmethod
+    def get_genres_from_name_list(list):
+        """
+        Devuelve una lista de géneros a partir de una lista de sus nombres.
+        """
+        genres = []
+
+        for genreName in list:
+            query = db.select(Genre).filter_by(name=genreName)
+            genre = db.session.execute(query).scalar()
+            genres.append(genre)
+
+        return genres
 
 '''
 class ReleaseType(db.Model):
