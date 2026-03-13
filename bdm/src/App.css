@@ -1,0 +1,15 @@
+:root {
+    --primary-color: #0E21A0;
+    --secondary-color: #4D2FB2;
+    --tertiary-color: #B153D7;
+    --quaternary-color: #F375C2;
+}
+
+body {
+    font-family: Tahoma;
+    color: var(--tertiary-color)
+}
+
+.title { color: var(--primary-color) }
+.subtitle { color: var(--secondary-color) }
+.header-separator { color: var(--quaternary-color) }
